@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import ForeignKey
 
 from apps.users.models import User
 
@@ -25,3 +26,20 @@ class Task(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.status})"
+
+
+class Comment (models.Model):
+    text = models.TextField()
+    task_id = ForeignKey(Task,on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.task_id}: {str(self.text)}"
+
+
+class Timer (models.Model):
+    start = models.DateTimeField(auto_now_add=True)
+    stop = models.DateTimeField(null=True,blank=True)
+    duration = models.DurationField(null=True,blank=True)
+    task = models.ForeignKey(Task,on_delete=models.CASCADE)
+    user = models.ForeignKey(User,on_delete=models.CASCADE)
+

@@ -30,7 +30,7 @@ class RegisterUser(APIView):
 
                 'access': str(refresh.access_token),
 
-            })
+            },status=status.HTTP_201_CREATED )
 
 
 

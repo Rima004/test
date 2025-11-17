@@ -1,18 +1,22 @@
 from django.conf import settings
+from django.utils.timezone import now
 from django.dispatch import receiver
 from django.utils.timezone import override
 from rest_framework import status
 from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView, RetrieveUpdateAPIView, \
-    RetrieveDestroyAPIView
+    RetrieveDestroyAPIView, get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.status import HTTP_200_OK, HTTP_401_UNAUTHORIZED
+from rest_framework.status import HTTP_200_OK, HTTP_401_UNAUTHORIZED, HTTP_201_CREATED
 from django_filters import rest_framework as filters
 from rest_framework.views import APIView
 from django.db.models.signals import post_save
+from yaml import serialize
+
 from apps.tasks.filters import TasksFilter
-from apps.tasks.models import Task, Comment
-from apps.tasks.serializers import TaskSerialiser, TasksList, TaskUpdateStatusSerialiser, CommetsSerialiser
+from apps.tasks.models import *
+from apps.tasks.serializers import TaskSerialiser, TasksList, TaskUpdateStatusSerialiser, CommetsSerialiser, \
+    TimerSerializer
 from django.core.mail import send_mail
 
 # Create your views here.
@@ -49,7 +53,7 @@ class TaskCreate(CreateAPIView):
                         'description':new_task.description,
                         'status': new_task.status,
                         'user': new_task.user.id
-                        },status=HTTP_200_OK)
+                        },status=HTTP_201_CREATED)
 
 
 
@@ -74,7 +78,9 @@ class TaskUpdateStatus(RetrieveUpdateAPIView):
 class TaskCompleted(APIView):
 
     def post (self, request, pk):
-        updated_task = Task.objects.filter(pk=pk).update(status='Completed')
+        updated_task=get_object_or_404(queryset=Task.objects.all(),pk=pk)
+        updated_task.status='Completed'
+        updated_task.save()
         if updated_task == 0:
             return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -108,6 +114,34 @@ class ViewComments(ListAPIView):
     lookup_field = 'task_id'
     serializer_class = CommetsSerialiser
 
+
+class StartTimer(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class =TimerSerializer
+    def post(self,request):
+        task = Task.objects.get(id=request.data["task"])
+        user = task.user
+
+
+
+        serializer=self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(user=user)
+        return Response({"timer":"start"})
+
+
+class  StopTimer(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = TimerSerializer
+
+    def post(self,request):
+        task=Task.objects.get(id=request.data['task'])
+        timer=Timer.objects.get(task=task)
+        timer.stop =now()
+        timer.duration = now()-timer.start
+        timer.save()
+        return Response({"message":"timer is stop",
+                         "duraton":timer.duration})
 
 
 

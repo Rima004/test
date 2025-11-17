@@ -1,7 +1,8 @@
 
 from rest_framework import serializers
 
-from apps.tasks.models import Task, Comment
+from apps.tasks.models import Task, Comment, Timer
+from apps.users.models import User
 
 
 class TaskSerialiser(serializers.ModelSerializer):
@@ -29,4 +30,16 @@ class CommetsSerialiser(serializers.ModelSerializer):
     class Meta:
         model=Comment
         fields=['text','task_id']
+
+class TimerSerializer(serializers.ModelSerializer):
+
+   task=serializers.PrimaryKeyRelatedField(queryset=Task.objects.all())
+
+   class Meta:
+       model=Timer
+       fields=['start','task',"user","stop","duration"]
+       read_only_fields=['user','stop','start','duration']
+
+
+
 
