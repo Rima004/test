@@ -11,18 +11,25 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 from datetime import timedelta
 from pathlib import Path
+import os
+import environ
 
 from django.conf.global_settings import AUTH_USER_MODEL
+
+env = environ.Env()
+
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+environ.Env.read_env(BASE_DIR / '.env')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-4dajv1$i!u@cm^y--836t4-d%c1)=o!=#q41*cw=5gvr-frqt('
+SECRET_KEY = env.str('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -45,6 +52,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'apps.tasks',
 'drf_spectacular',
+
 ]
 
 MIDDLEWARE = [
@@ -83,8 +91,12 @@ AUTH_USER_MODEL = "users.User"
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': env.str('POSTGRE_NAME'),
+        'USER': env.str('POSTGRE_USER'),
+        'PASSWORD':env.str('POSTGRE_PASSWORD'),
+        'HOST': env.str('POSTGRE_HOST'),
+        'PORT': env.str('POSTGRE_PORT'),
     }
 }
 
@@ -189,9 +201,13 @@ SPECTACULAR_SETTINGS = {
     # OTHER SETTINGS
 }
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = "pervuncukarina@gmail.com"
-EMAIL_HOST_PASSWORD = 'ymex vgqj nnok tdvq'
+EMAIL_HOST = env.str('EMAIL_HOST')
+EMAIL_PORT = env.int('EMAIL_PORT')
+EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS')
+EMAIL_HOST_USER = env.str('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD =env.str('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+
+CELERY_BROKER_URL = env.str('CELERY_BROKER_URL')
+CELERY_RESULT_BACKEND = env.str('CELERY_RESULT_BACKEND')
