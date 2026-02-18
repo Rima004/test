@@ -18,24 +18,9 @@ from apps.tasks.models import *
 from apps.tasks.serializers import TaskSerialiser, TasksList, TaskUpdateStatusSerialiser, CommetsSerialiser, \
     TimerSerializer
 from django.core.mail import send_mail
-
+from apps.tasks.tasks import *
 # Create your views here.
 
-@receiver(post_save,sender=Task)
-def send_email(sender, instance, created, **kwargs):
-        if created:
-            new_task = instance.user.email
-            send_mail("New task for you", "Hi", settings.EMAIL_HOST_USER, [new_task])
-        else:
-            if(instance.status == 'Completed'):
-                send_mail("The task completed",f"Title task: {instance.title}",settings.EMAIL_HOST_USER, [instance.user.email])
-
-
-@receiver(post_save,sender=Comment)
-def new_comment(sender, instance, created, **kwargs):
-    if created:
-        owner = instance.task_id.user.email
-        send_mail("New comment for you", "Hi", settings.EMAIL_HOST_USER, [owner])
 
 
 
@@ -48,7 +33,7 @@ class TaskCreate(CreateAPIView):
        serializer.is_valid(raise_exception=True)
 
        new_task = serializer.save(user=request.user)
-
+       send_email.delay('New task for you',new_task.user.email)
        return Response({'title': new_task.title,
                         'description':new_task.description,
                         'status': new_task.status,
@@ -81,6 +66,7 @@ class TaskCompleted(APIView):
         updated_task=get_object_or_404(queryset=Task.objects.all(),pk=pk)
         updated_task.status='Completed'
         updated_task.save()
+        completed_task.delay("Your task is completed", updated_task.user.email)
         if updated_task == 0:
             return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -104,6 +90,7 @@ class AddComment(APIView):
       serializer = self.serializer_class(data=request.data)
       serializer.is_valid(raise_exception=True)
       new_comment = serializer.save()
+      new_comment.delay("Hi,new comment",new_comment.user.email)
       return Response({'comment': new_comment.id})
 
 

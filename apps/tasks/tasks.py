@@ -13,9 +13,7 @@ def send_email(message:str,to:str):
 @shared_task
 def completed_task(message:str,to:str):
     send_mail("Your task is completed", message, settings.EMAIL_HOST_USER, [to])
-@shared_task
-def task():
-    print("Starting task")
+
 @shared_task
 def new_comment(message:str,to:str):
-    send_mail('Arina',message,settings.EMAIL_HOST_USER,[to])
+    send_mail("New comment for you", message, settings.EMAIL_HOST_USER, [to])
